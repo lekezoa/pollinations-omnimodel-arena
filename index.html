@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniModel Arena - Ask Every AI Model The Same Question</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card-bg: #141b27;
+      --border: #243044;
+      --primary: #8b5cf6;
+      --accent: #06b6d4;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(11, 15, 23, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.25rem; letter-spacing: -0.5px; }
+    .badge-icon { background: linear-gradient(135deg, var(--primary), var(--accent)); padding: 0.4rem 0.6rem; border-radius: 8px; color: #fff; font-size: 0.9rem; }
+    .container { max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%; flex: 1; }
+    .hero { text-align: center; margin-bottom: 2rem; }
+    .hero h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 0.5rem; background: linear-gradient(to right, #fff, var(--text-muted)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: var(--text-muted); font-size: 1.05rem; }
+    
+    .query-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+    .input-row { display: flex; gap: 0.75rem; }
+    input[type="text"] { flex: 1; background: #0f1623; border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; color: #fff; font-size: 1rem; outline: none; }
+    input[type="text"]:focus { border-color: var(--primary); }
+    button.btn-ask { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border: none; border-radius: 10px; padding: 0.85rem 1.75rem; font-weight: 600; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
+    button.btn-ask:hover { opacity: 0.9; }
+
+    .presets { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .preset-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+    .preset-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted); padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+    .preset-btn:hover { border-color: var(--accent); color: #fff; }
+
+    .byop-banner { display: flex; justify-content: space-between; align-items: center; background: rgba(139, 92, 246, 0.1); border: 1px dashed var(--primary); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 2rem; font-size: 0.9rem; }
+    .byop-banner input { background: #0f1623; border: 1px solid var(--border); color: #fff; padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.85rem; width: 260px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 1.25rem; }
+    .model-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .card-header { padding: 0.85rem 1.15rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .model-title { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+    .model-tag { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 6px; background: rgba(255,255,255,0.06); color: var(--text-muted); }
+    .card-body { padding: 1.15rem; flex: 1; font-size: 0.92rem; line-height: 1.6; color: #cbd5e1; max-height: 380px; overflow-y: auto; white-space: pre-wrap; }
+    .card-footer { padding: 0.65rem 1.15rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="badge-icon">⚡</span>
+      <span>OmniModel Arena</span>
+    </div>
+    <a href="https://pollinations.ai/?ref=badge" target="_blank">
+      <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg" alt="Made with pollinations.ai" style="height: 32px;">
+    </a>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Ask Every Model The Same Question</h1>
+      <p>Compare perspectives, controversial takes, and consensus across 6 top AI models simultaneously via Pollinations.ai</p>
+    </div>
+
+    <div class="byop-banner">
+      <div>
+        <strong>🔑 Bring Your Own Pollen (BYOP):</strong> Enter your Pollinations API key to power queries with your balance.
+      </div>
+      <input type="password" id="apiKeyInput" placeholder="Enter key (e.g. sk_... or leave empty for free tier)" onchange="saveKey(this.value)">
+    </div>
+
+    <div class="query-box">
+      <div class="input-row">
+        <input type="text" id="questionInput" placeholder="Ask a philosophical dilemma, controversial debate, or complex question..." value="What is humanity's single greatest flaw, and can it ever be overcome?">
+        <button class="btn-ask" onclick="askAllModels()">Broadcast to All Models</button>
+      </div>
+      <div class="presets">
+        <span class="preset-label">Trending Dilemmas:</span>
+        <button class="preset-btn" onclick="setQuestion('What is humanity\'s single greatest flaw, and can it ever be overcome?')">Humanity's Greatest Flaw</button>
+        <button class="preset-btn" onclick="setQuestion('Should fully conscious AIs ever be granted legal personhood or rights?')">AI Personhood</button>
+        <button class="preset-btn" onclick="setQuestion('Is subjective happiness more valuable than objective truth?')">Happiness vs Truth</button>
+        <button class="preset-btn" onclick="setQuestion('Explain quantum physics in the voice of a grumpy 18th-century pirate.')">Pirate Quantum Physics</button>
+      </div>
+    </div>
+
+    <div class="grid" id="modelsGrid"></div>
+  </div>
+
+  <footer>
+    <a href="https://pollinations.ai/?ref=badge" target="_blank">
+      <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg" alt="Made with pollinations.ai" style="height: 32px;">
+    </a>
+    <p>Built with Pollinations.ai API for POLLEN-QUEST #19183 • Zero-setup multi-model comparison</p>
+  </footer>
+
+  <script>
+    const MODELS = [
+      { id: "openai", name: "OpenAI GPT-4o", tag: "Flagship" },
+      { id: "mistral", name: "Mistral Large", tag: "Open-Weights Leader" },
+      { id: "claude-hybrid", name: "Claude Hybrid", tag: "Nuance & Prose" },
+      { id: "deepseek", name: "DeepSeek V3", tag: "Reasoning" },
+      { id: "gemini", name: "Gemini 2.5 Flash", tag: "Multimodal Fast" },
+      { id: "qwen", name: "Qwen 2.5 72B", tag: "Logic & Analysis" }
+    ];
+
+    function saveKey(val) {
+      if (val) localStorage.setItem('pollinations_key', val.trim());
+      else localStorage.removeItem('pollinations_key');
+    }
+
+    function setQuestion(q) {
+      document.getElementById('questionInput').value = q;
+      askAllModels();
+    }
+
+    function initGrid() {
+      const grid = document.getElementById('modelsGrid');
+      grid.innerHTML = "";
+      const saved = localStorage.getItem('pollinations_key') || "";
+      if (saved) document.getElementById('apiKeyInput').value = saved;
+
+      MODELS.forEach(m => {
+        const card = document.createElement('div');
+        card.className = "model-card";
+        card.id = `card-${m.id}`;
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="model-title">
+              <span class="spinner" id="spin-${m.id}" style="display:none;"></span>
+              <span>${m.name}</span>
+            </div>
+            <span class="model-tag">${m.tag}</span>
+          </div>
+          <div class="card-body" id="body-${m.id}">Awaiting question broadcast...</div>
+          <div class="card-footer" id="foot-${m.id}">Model: ${m.id}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function queryModel(model, question, apiKey) {
+      const bodyEl = document.getElementById(`body-${model.id}`);
+      const spinEl = document.getElementById(`spin-${model.id}`);
+      const footEl = document.getElementById(`foot-${model.id}`);
+
+      spinEl.style.display = "inline-block";
+      bodyEl.textContent = "Synthesizing perspective...";
+      const t0 = performance.now();
+
+      try {
+        const headers = { "Content-Type": "application/json" };
+        if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+        const res = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            model: model.id,
+            messages: [
+              { role: "system", content: "You are being polled alongside other top AI models on a central question. Provide a direct, incisive, and unhedged perspective in 2-3 paragraphs. State your core thesis clearly." },
+              { role: "user", content: question }
+            ],
+            temperature: 0.7,
+            max_tokens: 350
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || "No response received.";
+        bodyEl.textContent = text;
+        const dt = ((performance.now() - t0) / 1000).toFixed(2);
+        footEl.textContent = `Completed in ${dt}s • ${model.id}`;
+      } catch (err) {
+        bodyEl.innerHTML = `<span style="color:#ef4444;">Error connecting to ${model.id}: ${err.message}. Try providing a BYOP key if rate-limited.</span>`;
+        footEl.textContent = "Failed";
+      } finally {
+        spinEl.style.display = "none";
+      }
+    }
+
+    function askAllModels() {
+      const q = document.getElementById('questionInput').value.trim();
+      if (!q) return;
+      const apiKey = localStorage.getItem('pollinations_key') || "";
+      MODELS.forEach(m => queryModel(m, q, apiKey));
+    }
+
+    window.onload = initGrid;
+  </script>
+</body>
+</html>
